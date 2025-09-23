@@ -3,7 +3,7 @@ import argparse
 import subprocess
 
 
-def _hyperprint(account, email, parent_dir, output_root, output_bucket):
+def _hyperprint():
     parser = argparse.ArgumentParser(description="Batch submit woolworm jobs")
     parser.add_argument("account", help="SLURM account (e.g., p12345)")
     parser.add_argument("email", help="email for SLURM notifications")
@@ -143,3 +143,6 @@ uv run ./eis/dataset.py {subdir}
 
             subprocess.run(["sbatch", script_path])
             os.remove(script_path)
+
+
+_hyperprint()
