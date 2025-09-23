@@ -3,7 +3,7 @@ import argparse
 import subprocess
 
 
-def _hyperprint():
+def _hyperprint(account, email, parent_dir, output_root, output_bucket):
     parser = argparse.ArgumentParser(description="Batch submit woolworm jobs")
     parser.add_argument("account", help="SLURM account (e.g., p12345)")
     parser.add_argument("email", help="email for SLURM notifications")
@@ -24,11 +24,8 @@ def _hyperprint():
         subdir = os.path.join(args.parent_dir, name)
         print(name, subdir)
         if os.path.isdir(subdir):
-            output_dir = os.path.join(args.output_root, name)
-            os.makedirs(output_dir, exist_ok=True)
-
             jp2_count = sum(
-                len([f for f in files if f.endswith(".jp2")]) for _, _, files in os.walk(subdir)
+                len([f for f in files if f.endswith(".jpg")]) for _, _, files in os.walk(subdir)
             )
             total_seconds = jp2_count * 30
             hours = total_seconds // 3600
@@ -137,7 +134,7 @@ export SINGULARITYENV_OLLAMA_HOST=0.0.0.0:${{OLLAMA_PORT}}
 ollama serve &> serve_ollama_${{SLURM_JOBID}}.log &
 sleep 10
 
-uv run ./main.py -i {subdir} -o ./{output_dir} {args.extra_args} --recursive
+uv run ./eis/dataset.py {subdir}
 """
 
             script_path = f"submit_{name}.sh"

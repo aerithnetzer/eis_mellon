@@ -18,6 +18,8 @@ classifiers = [
 dependencies = [
     "accelerate>=1.10.1",
     "boto3>=1.40.35",
+    "docling>=2.54.0",
+    "img2pdf>=0.6.1",
     "ipykernel>=6.30.1",
     "ipywidgets>=8.1.7",
     "jupyterlab>=4.4.7",
@@ -31,6 +33,7 @@ dependencies = [
     "python-lsp-server[all]>=1.13.1",
     "ruff",
     "spacy>=3.8.7",
+    "spacy-layout>=0.0.12",
     "spacy-llm>=0.7.3",
     "textnets>=0.10.3",
     "tqdm",
