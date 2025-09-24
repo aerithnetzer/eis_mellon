@@ -6,6 +6,7 @@ import subprocess
 def hyperprint():
     parser = argparse.ArgumentParser(description="Batch process JP2 with woolworm and run marker")
     parser.add_argument("parent_dir", help="Parent directory containing barcode subdirectories")
+    parser.add_argument("account", help="PXXXXX")
     args = parser.parse_args()
 
     parent_dir = args.parent_dir
@@ -38,6 +39,7 @@ def hyperprint():
 
         # SLURM script runs Woolworm then Marker
         SLURM_TEMPLATE = rf"""#!/bin/bash
+#SBATCH --account = {args.account}
 #SBATCH --partition=gengpu
 #SBATCH --gres=gpu:1
 #SBATCH --nodes=1
