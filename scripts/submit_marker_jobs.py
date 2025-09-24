@@ -6,7 +6,7 @@ import subprocess
 def hyperprint():
     parser = argparse.ArgumentParser(description="Batch process JP2 with woolworm and run marker")
     parser.add_argument("parent_dir", help="Parent directory containing barcode subdirectories")
-    parser.add_argument("account", help="PXXXXX")
+    parser.add_argument("--account", required=True, help="SLURM account name")
     args = parser.parse_args()
 
     parent_dir = args.parent_dir
