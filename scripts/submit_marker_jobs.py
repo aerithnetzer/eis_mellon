@@ -36,7 +36,7 @@ def hyperprint():
         minutes = (total_seconds % 3600) // 60
         seconds = total_seconds % 60
         slurm_time = f"{hours}:{minutes:02}:{seconds:02}"
-
+        print(f"Slurm time is: {slurm_time}")
         # SLURM script runs Woolworm then Marker
         SLURM_TEMPLATE = rf"""#!/bin/bash
 #SBATCH --account={args.account}
