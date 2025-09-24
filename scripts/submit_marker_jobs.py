@@ -1,6 +1,7 @@
 import os
 import argparse
 import subprocess
+from loguru import logger
 
 
 def hyperprint():
@@ -12,9 +13,10 @@ def hyperprint():
     parent_dir = args.parent_dir
     if not os.path.exists(parent_dir):
         raise FileNotFoundError(f"Parent directory {parent_dir} does not exist.")
-
+    logger.info(f"Parent directory is {parent_dir}")
     for i, name in enumerate(os.listdir(parent_dir)):
         barcode_dir = os.path.join(parent_dir, name)
+        logger.info(f"barcode_dir directory is {barcode_dir}")
         if not os.path.isdir(barcode_dir):
             continue
 
@@ -26,11 +28,14 @@ def hyperprint():
         woolworm_output_dir = os.path.join(barcode_dir, "WOOLWORM_OUTPUT")
         marker_output_dir = os.path.join(barcode_dir, "MARKER_OUTPUT")
 
+        logger.info(f"Woolworm output dir {woolworm_output_dir}")
+        logger.info(f"Marker output dir {marker_output_dir}")
         os.makedirs(woolworm_output_dir, exist_ok=True)
         os.makedirs(marker_output_dir, exist_ok=True)
 
         # Count JP2s for SLURM time estimate
         jp2_files = [f for f in os.listdir(jp2_dir) if f.lower().endswith(".jp2")]
+        logger.info(f"{len(jp2_files)} found.")
         total_seconds = len(jp2_files) * 45
         hours = total_seconds // 3600
         minutes = (total_seconds % 3600) // 60
