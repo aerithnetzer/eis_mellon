@@ -1,40 +1,41 @@
-import os
 import argparse
+import os
 import subprocess
 
 
-def _hyperprint():
+def hyperprint():
     parser = argparse.ArgumentParser(description="Batch submit woolworm jobs")
-    parser.add_argument("account", help="SLURM account (e.g., p12345)")
-    parser.add_argument("email", help="email for SLURM notifications")
-    parser.add_argument("parent_dir", help="Parent directory containing subdirectories")
-    parser.add_argument("--output_root", default="outputs", help="Root output directory")
-    parser.add_argument(
-        "--output_bucket", default="", help="The S3 Bucket to put processed images in"
-    )
-    parser.add_argument("--extra_args", default="", help="Extra args for woolworm")
+    parser.add_argument("parent_dir", help="Parent directory containing barcode subdirectories")
     args = parser.parse_args()
 
-    if not os.path.exists(args.parent_dir):
-        raise FileNotFoundError(f"Parent directory {args.parent_dir} does not exist.")
+    parent_dir = args.parent_dir
+    if not os.path.exists(parent_dir):
+        raise FileNotFoundError(f"Parent directory {parent_dir} does not exist.")
 
-    os.makedirs(args.output_root, exist_ok=True)
+    for i, name in enumerate(os.listdir(parent_dir)):
+        barcode_dir = os.path.join(parent_dir, name)
+        if not os.path.isdir(barcode_dir):
+            continue
 
-    for i, name in enumerate(os.listdir(args.parent_dir)):
-        subdir = os.path.join(args.parent_dir, name)
-        print(name, subdir)
-        if os.path.isdir(subdir):
-            jp2_count = sum(
-                len([f for f in files if f.endswith(".jpg")]) for _, _, files in os.walk(subdir)
-            )
-            total_seconds = jp2_count * 30
-            hours = total_seconds // 3600
-            minutes = (total_seconds % 3600) // 60
-            seconds = total_seconds % 60
-            slurm_time = f"{hours}:{minutes:02}:{seconds:02}"
-            # Use raw f-string to preserve bash $ and { } syntax
-            SLURM_TEMPLATE = rf"""#!/bin/bash
-#SBATCH --account={args.account}
+        jp2_dir = os.path.join(barcode_dir, "JP2000")
+        if not os.path.exists(jp2_dir):
+            print(f"Skipping {barcode_dir}, no JP2000 directory found")
+            continue
+
+        # Count JPGs
+        jp2_count = sum(
+            len([f for f in files if f.endswith(".jpg")]) for _, _, files in os.walk(jp2_dir)
+        )
+        total_seconds = jp2_count * 30
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+        slurm_time = f"{hours}:{minutes:02}:{seconds:02}"
+
+        marker_output_dir = os.path.join(barcode_dir, "MARKER_OUTPUT")
+
+        # Raw f-string to preserve bash $/{} syntax
+        SLURM_TEMPLATE = rf"""#!/bin/bash
 #SBATCH --partition=gengpu
 #SBATCH --gres=gpu:1
 #SBATCH --nodes=1
@@ -44,105 +45,20 @@ def _hyperprint():
 #SBATCH --mem=16GB
 #SBATCH --output=output-%j.out
 #SBATCH --error=error-%j.err
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user={args.email}
 
-source_helpers () {{
-  random_number () {{
-    shuf -i ${{1}}-${{2}} -n 1
-  }}
-  export -f random_number
-
-  port_used_python() {{
-    python -c "import socket; socket.socket().connect(('${{1}}',${{2}}))" >/dev/null 2>&1
-  }}
-
-  port_used_python3() {{
-    python3 -c "import socket; socket.socket().connect(('${{1}}',${{2}}))" >/dev/null 2>&1
-  }}
-
-  port_used_nc(){{ nc -w 2 "$1" "$2" < /dev/null > /dev/null 2>&1; }}
-  port_used_lsof(){{ lsof -i :"$2" >/dev/null 2>&1; }}
-
-  port_used_bash(){{
-    local bash_supported=$(strings /bin/bash 2>/dev/null | grep tcp)
-    if [ "$bash_supported" == "/dev/tcp/*/*" ]; then
-      (: < /dev/tcp/$1/$2) >/dev/null 2>&1
-    else
-      return 127
-    fi
-  }}
-
-  port_used () {{
-    local port="${{1#*:}}"
-    local host=$((expr "${{1}}" : '\(.*\):' || echo "localhost") | awk 'END{{print $NF}}')
-    local port_strategies=(port_used_nc port_used_lsof port_used_bash port_used_python port_used_python3)
-
-    for strategy in ${{port_strategies[@]}};
-    do
-      $strategy $host $port
-      status=$?
-      if [[ "$status" == "0" ]] || [[ "$status" == "1" ]]; then
-        return $status
-      fi
-    done
-    return 127
-  }}
-  export -f port_used
-
-  find_port () {{
-    local host="${{1:-localhost}}"
-    local port=$(random_number "${{2:-2000}}" "${{3:-65535}}")
-    while port_used "${{host}}:${{port}}"; do
-      port=$(random_number "${{2:-2000}}" "${{3:-65535}}")
-    done
-    echo "${{port}}"
-  }}
-  export -f find_port
-
-  wait_until_port_used () {{
-    local port="${{1}}"
-    local time="${{2:-30}}"
-    for ((i=1; i<=time*2; i++)); do
-      port_used "${{port}}"
-      port_status=$?
-      if [ "$port_status" == "0" ]; then
-        return 0
-      elif [ "$port_status" == "127" ]; then
-         echo "commands to find port were either not found or inaccessible."
-         echo "command options are lsof, nc, bash's /dev/tcp, or python (or python3) with socket lib."
-         return 127
-      fi
-      sleep 0.5
-    done
-    return 1
-  }}
-  export -f wait_until_port_used
-}}
-export -f source_helpers
-source_helpers
-OLLAMA_PORT=$(find_port localhost 7000 11000)
-export OLLAMA_PORT
-echo $OLLAMA_PORT
-
-module load ollama/0.11.4
-module load gcc/12.3.0-gcc
-
-export OLLAMA_HOST=0.0.0.0:${{OLLAMA_PORT}}
-export SINGULARITYENV_OLLAMA_HOST=0.0.0.0:${{OLLAMA_PORT}}
-
-ollama serve &> serve_ollama_${{SLURM_JOBID}}.log &
-sleep 10
-
-uv run ./eis/dataset.py {subdir}
+NUM_DEVICES=1
+NUM_WORKERS=8
+module purge
+uv run marker "{jp2_dir}" --output_dir="{marker_output_dir}"
 """
 
-            script_path = f"submit_{name}.sh"
-            with open(script_path, "w") as f:
-                f.write(SLURM_TEMPLATE)
+        script_path = f"submit_{name}.sh"
+        with open(script_path, "w") as f:
+            f.write(SLURM_TEMPLATE)
 
-            subprocess.run(["sbatch", script_path])
-            os.remove(script_path)
+        subprocess.run(["sbatch", script_path])
+        os.remove(script_path)
 
 
-_hyperprint()
+if __name__ == "__main__":
+    hyperprint()

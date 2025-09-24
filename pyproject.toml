@@ -27,6 +27,7 @@ dependencies = [
     "jupyterlab-vim>=4.1.4",
     "loguru",
     "mkdocs",
+    "paddleocr[all]>=3.2.0",
     "pip",
     "pytesseract>=0.3.13",
     "python-dotenv",

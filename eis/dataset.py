@@ -12,25 +12,37 @@ app = typer.Typer()
 def main(input_path: Path):
     try:
         assert os.path.isdir(input_path)
-    except ValueError:
+    except AssertionError:
         logger.critical("Input path is not a directory!")
-        raise ValueError
+        raise ValueError("Input path is not a directory")
+
     logger.info("Starting job")
     jp2_dir = os.path.join(input_path, "JP2000")
-    jp2_files = os.listdir(jp2_dir)
-    jp2_files = sorted(jp2_files)
-    for f in tqdm(jp2_files, desc="Transforming documents"):
-        o = f.replace("JP2000", "WOOLWORM")
-        o = f.replace(".jp2", ".png")
-        os.makedirs(o, exist_ok=True)
-        Woolworm.Pipelines.process_image(f, o)
-        text = Woolworm.ocr(o)
-        text = str(text)
-        o = o.replace(".png", ".md")
-        with open(o, "w", encoding="utf-8") as f:
-            f.write(text)
+    logger.info(f"JP2 Directory: {jp2_dir}")
 
-    pass
+    jp2_files = sorted(Path(jp2_dir).glob("*.jpg"))
+    logger.info(f"Found {len(jp2_files)} JP2 files")
+
+    for f in tqdm(jp2_files, desc="Transforming documents"):
+        # create parallel WOOLWORM dir
+        o = Path(str(f).replace("JP2000", "WOOLWORM")).with_suffix(".png")
+        os.makedirs(o.parent, exist_ok=True)
+
+        Woolworm.Pipelines.process_image(str(f), str(o))
+
+        # sanity check
+        if not o.exists() or o.stat().st_size == 0:
+            logger.error(f"Output file not created properly: {o}")
+            continue
+
+        text = Woolworm.ocr(str(o))
+        text = str(text)
+
+        md_out = o.with_suffix(".md")
+        with open(md_out, "w", encoding="utf-8") as mdfile:
+            mdfile.write(text)
+
+    logger.info("Processing complete")
 
 
 if __name__ == "__main__":
