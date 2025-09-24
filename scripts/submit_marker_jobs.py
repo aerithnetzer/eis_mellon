@@ -39,7 +39,7 @@ def hyperprint():
 
         # SLURM script runs Woolworm then Marker
         SLURM_TEMPLATE = rf"""#!/bin/bash
-#SBATCH --account = {args.account}
+#SBATCH --account={args.account}
 #SBATCH --partition=gengpu
 #SBATCH --gres=gpu:1
 #SBATCH --nodes=1
