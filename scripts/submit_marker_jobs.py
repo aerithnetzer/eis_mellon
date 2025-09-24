@@ -51,8 +51,6 @@ def hyperprint():
 #SBATCH --error=error-%j.err
 
 module purge
-module load python/3.10   # adjust for your environment
-source ~/venvs/woolworm/bin/activate
 
 echo "Running Woolworm on JP2 files"
 for f in "{jp2_dir}"/*.jp2; do
