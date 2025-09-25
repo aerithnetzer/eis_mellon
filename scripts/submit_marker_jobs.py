@@ -58,7 +58,7 @@ def hyperprint():
 module purge
 
 echo "Running Woolworm on JP2 files"
-uv run ./scripts/run_woolworm.py {parent_dir}
+uv run ./scripts/run_woolworm.py {barcode_dir}
 
 echo "Running Marker on Woolworm output"
 
