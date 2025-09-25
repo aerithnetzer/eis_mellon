@@ -56,13 +56,13 @@ def hyperprint():
 #SBATCH --error=error-%j.err
 
 module purge
-
+NUM_WORKERS=4
 echo "Running Woolworm on JP2 files"
 uv run ./scripts/run_woolworm.py {barcode_dir}
 
 echo "Running Marker on Woolworm output"
 
-uv run marker "{woolworm_output_dir}" --output_dir="{marker_output_dir}"
+uv run marker "{woolworm_output_dir}/WOOLWORM.pdf" --output_dir="{marker_output_dir}"
 """
 
         script_path = f"submit_{name}.sh"
