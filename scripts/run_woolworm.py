@@ -21,7 +21,7 @@ def run_woolworm_job(barcode_dir: Path):
         logger.error(f"{jp2000_directory} does not exist or is not a directory")
         sys.exit(1)
 
-    output_dir = barcode_dir.parent / "WOOLWORM_OUTPUT"
+    output_dir = barcode_dir / "WOOLWORM_OUTPUT"
     output_dir.mkdir(exist_ok=True)
 
     jp2_files = sorted(jp2000_directory.glob("*.jp2"))
@@ -40,6 +40,7 @@ def run_woolworm_job(barcode_dir: Path):
     # Get sorted list of all .jpg files in current directory
     jpg_files = sorted(glob.glob("*.jpg"))
 
+    logger.debug(f"Now converting {len(jpg_files)} to a PDF")
     # Open images and convert to RGB (needed for PDF)
     images = [Image.open(f).convert("RGB") for f in jpg_files]
 

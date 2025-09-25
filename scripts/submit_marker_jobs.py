@@ -1,6 +1,7 @@
-import os
 import argparse
+import os
 import subprocess
+
 from loguru import logger
 
 
@@ -48,7 +49,7 @@ def hyperprint():
 #SBATCH --partition=gengpu
 #SBATCH --gres=gpu:1
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
+#SBATCH --ntasks-per-node=2
 #SBATCH --job-name=Hyperprint-{i:05d}
 #SBATCH --time={slurm_time}
 #SBATCH --mem=16GB
@@ -56,7 +57,7 @@ def hyperprint():
 #SBATCH --error=error-%j.err
 
 module purge
-NUM_WORKERS=4
+NUM_WORKERS=2
 echo "Running Woolworm on JP2 files"
 uv run ./scripts/run_woolworm.py {barcode_dir}
 
