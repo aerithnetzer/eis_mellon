@@ -58,12 +58,10 @@ def hyperprint():
 module purge
 
 echo "Running Woolworm on JP2 files"
-for f in "{jp2_dir}"/*.jp2; do
-    fname=$(basename "$f" .jp2)
-    python -c "from woolworm import Woolworm; Woolworm.Pipelines.process_image('$f', '{woolworm_output_dir}/$fname.jpg')"
-done
+uv run ./scripts/run_woolworm.py {parent_dir}
 
 echo "Running Marker on Woolworm output"
+
 uv run marker "{woolworm_output_dir}" --output_dir="{marker_output_dir}"
 """
 
