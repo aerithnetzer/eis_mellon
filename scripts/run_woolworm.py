@@ -1,9 +1,11 @@
 from argparse import ArgumentParser
+import glob
+import os
 from pathlib import Path
-import subprocess
 import sys
 
 from loguru import logger
+from PIL import Image
 from woolworm import Woolworm
 
 parser = ArgumentParser(prog="Woolworm on a bunch o' stuff.")
@@ -35,8 +37,19 @@ def run_woolworm_job(barcode_dir: Path):
             output_file_path=str(out_file),
         )
 
-    logger.info(f"Running MARKER on {output_dir}")
-    subprocess.run(["marker", str(output_dir)], check=True)
+    # Get sorted list of all .jpg files in current directory
+    jpg_files = sorted(glob.glob("*.jpg"))
+
+    # Open images and convert to RGB (needed for PDF)
+    images = [Image.open(f).convert("RGB") for f in jpg_files]
+
+    if images:
+        # Save first image and append the rest as pages
+        pdf_path = os.path.join(output_dir, "WOOLWORM.pdf")
+        images[0].save(pdf_path, save_all=True, append_images=images[1:])
+        print(f"PDF saved as {pdf_path}")
+    else:
+        print("No .jpg files found in current directory.")
 
 
 if __name__ == "__main__":
