@@ -34,7 +34,7 @@ dependencies = [
   "textnets>=0.10.3",
   "tqdm",
   "typer",
-  "woolworm>=0.0.6",
+  "woolworm>=0.0.8",
 ]
 requires-python = "~=3.12.0"
 
