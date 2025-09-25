@@ -950,7 +950,7 @@ requires-dist = [
     { name = "textnets", specifier = ">=0.10.3" },
     { name = "tqdm" },
     { name = "typer" },
-    { name = "woolworm", specifier = ">=0.0.6" },
+    { name = "woolworm", specifier = ">=0.0.8" },
 ]
 
 [[package]]
@@ -4930,20 +4930,22 @@ wheels = [
 
 [[package]]
 name = "woolworm"
-version = "0.0.6"
+version = "0.0.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "loguru" },
     { name = "marker-pdf", extra = ["full"] },
     { name = "ollama" },
     { name = "opencv-python" },
+    { name = "psutil" },
     { name = "pytesseract" },
     { name = "scikit-image" },
     { name = "scipy" },
+    { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f3/69/9374e6ae5a1d0ad4bbe3803f2749b3ec3f66aedf660c037de9b8db242653/woolworm-0.0.6.tar.gz", hash = "sha256:1bf87ba92bc8aa7b85db791e1103b1f72924870e18ad38d674152dfeb036c1d6", size = 6437, upload_time = "2025-09-19T14:51:44.132Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0e/a9/913b712a45ca272848e0661091853384f796747933be2454d4cc14351c96/woolworm-0.0.9.tar.gz", hash = "sha256:d3f17de13e73709ff7aea97245a30988f482c5122b9709ff241b3e8ad88751be", size = 7094, upload_time = "2025-09-25T14:39:36.65Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5d/1d/7b76bd20aa188930c93e87b4d7bf7053f58120f722c37497c1762a9d660d/woolworm-0.0.6-py3-none-any.whl", hash = "sha256:7c2e5f91811d706e8424a2ab3e222ea674420a5a3b0e737dd896402dd4a5094b", size = 6725, upload_time = "2025-09-19T14:51:43.037Z" },
+    { url = "https://files.pythonhosted.org/packages/70/98/ad4388cc11b333c54ba25934e2ee7da6fe765afbb9aad5cfc1ef4ba998ee/woolworm-0.0.9-py3-none-any.whl", hash = "sha256:67d83bd2ed41df8ddc70ffd1c365244001c183282919b5f0a3434113b29310ad", size = 7239, upload_time = "2025-09-25T14:39:35.641Z" },
 ]
 
 [[package]]
