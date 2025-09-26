@@ -1,108 +1,108 @@
 import argparse
 import os
-from pathlib import Path, PurePath
-
+from pathlib import Path
+from fireworks import LaunchPad
+from jobflow.managers.fireworks import flow_to_workflow
 from jobflow.core.flow import Flow
 from jobflow.core.job import job
-from jobflow.managers.local import run_locally
+from fireworks.core.rocket_launcher import rapidfire
 from loguru import logger
+from PIL import Image
 from woolworm import Woolworm
 
+
 parser = argparse.ArgumentParser()
-parser.add_argument("input_dir")
-parser.add_argument("output_dir")
+parser.add_argument("barcode_dir", help="Path to barcode directory (e.g. P0491XXXXX)")
+parser.add_argument("--launcher-root", default="~/fw_launchers", help="Where launcher_* dirs go")
 args = parser.parse_args()
-input_dir = args.input_dir
-output_dir = args.output_dir
 
-DEBUG = True
-
-# Our data model looks like this:
-# PXXXX_YYYYYYY <- This is the barcode that is affiliated with the work. Each work has one barcode.
-# |- JPEG2000/ <- This folder contains all JPEG2000 files affiliated with the work in full colorspace.
-# |- JPEG/ <- This folder contains all JPEG files affiliated with the work.
-# |- MARKER_OUTPUT/
-# | |- PXXXX_YYYYYYY_0001/
-# | | |- PXXXX_YYYYYYY_0001.md
-# | | |- PXXXX_YYYYYYY_meta.json
-# | |- PXXXX_YYYYYYY_0002/
-# | | |- PXXXX_YYYYYYY.md
-# | | |- PXXXX_YYYYYYY_meta.json
-# | |- PXXXX_YYYYYYY_0003/
-# |- PXXXX_YYYYYYY.PDF
+barcode_dir = Path(args.barcode_dir).resolve()
+launcher_root = Path(os.path.expanduser(args.launcher_root)).resolve()
+launcher_root.mkdir(parents=True, exist_ok=True)
 
 
 @job
-def jp2s_to_jpgs(input_dir):
-    """Converts all JPEG2000 files in a directory to JPEG files and returns a list of paths to JPEG files.
-    Keyword arguments:
-    input_dir (Path-like or string): Path to a barcode directory.
-    output_paths (list[Path]): A list of paths to JPG files.
-    """
+def jp2s_to_jpgs(barcode_dir: Path):
+    barcode_dir = Path(barcode_dir).resolve()
+    input_dir = Path(barcode_dir) / "JP2000"  # <-- fixed name
+    if not input_dir.exists():
+        raise FileNotFoundError(f"Missing JP2000 dir: {input_dir}")
+
+    jpeg_dir = Path(barcode_dir) / "JPEG"
+    jpeg_dir.mkdir(parents=True, exist_ok=True)
+
     w = Woolworm()
-    output_paths: list = []
-    logger.debug(f"Type of input_dir: {type(input_dir)}")
-    input_dir = Path(PurePath(input_dir) / "JP2000")
-    fs = sorted(os.listdir(input_dir))
+    output_paths = []
 
-    for f in fs:
-        logger.debug(f"Now running Woolworm on {str(f)}")
-        f: os.PathLike | str  # Declare `f` to be of PathLike type.
-        g: os.PathLike | str  # Declare `g` to be of PathLike type.
-        f = PurePath(f)
-        if f.parts[-1] == ".jpg":
-            f = PurePath(os.path.abspath(f))
-
-            g = f.with_suffix(".jpg")
-            g = Path(str(g).replace("JP2000", "JPEG"))
+    for i, f in enumerate(sorted(input_dir.glob("*.jp2"))):
+        try:
+            g = jpeg_dir / f.with_suffix(".jpg").name
+            logger.debug(f"Now converting {i + 1}/20: {f} -> {g}")
             w.Pipelines.process_image(f, g)
             output_paths.append(g)
-        else:
-            logger.info(f"Skipping {f}, unexpected suffix! ")
+        except Exception as e:
+            logger.error(f"Failed on file {f}: {e}")
+            break  # or continue, depending on desired behavior
+        logger.debug(f"Output paths: {output_paths}, of type {type(output_paths)}")
     return output_paths
 
 
-def jp2_to_jpg(input_path, output_path):
-    """Converts a JPEG2000 file to a JPEG file using Woolworm Backend. Returns the path of the resulting JPEG file.
-    Keyword arguments:
-    input_path (Path-like or str): Path to a JPEG2000 file.
-    output_path (Path-like or str): Path to destination JPEG file.
-    """
+@job
+def jpgs_to_pdf(jpg_paths: list[Path], barcode_dir: Path):
+    if not jpg_paths:
+        raise ValueError("No JPEG files provided")
 
-    # This is where woolworm happens
-    # Input path should be a directory that has the barcode as the name.
-    # All it will do is convert the files from jp2 to jpg. Keeping the same resolution but smaller data size.
-    pass
+    jpg_paths = sorted(jpg_paths, key=str)
+    images = [Image.open(p).convert("RGB") for p in jpg_paths]
+
+    output_pdf = Path(barcode_dir).resolve() / "WOOLWORM.PDF"
+    images[0].save(output_pdf, save_all=True, append_images=images[1:])
+    logger.debug(f"Putting PDF in {output_pdf}")
+
+    return output_pdf
 
 
 @job
-def jpgs_2_pdf(input_path, output_path):
-    # This is where we convert all of the jpg files generated in the `jp2_to_jpg` job to a PDF where each jpg image is a file of the PDF
-    pass
+def marker_on_pdf(pdf_path: str | os.PathLike):
+    pdf_path = Path(pdf_path).resolve()  # Make absolute
+    from marker.converters.pdf import PdfConverter
+    from marker.models import create_model_dict
+    from marker.output import save_output
+
+    converter = PdfConverter(artifact_dict=create_model_dict())
+    rendered = converter(str(pdf_path))  # Ensure string path
+    output_dir = Path(pdf_path).parent.resolve()
+    save_output(rendered, str(output_dir), Path(pdf_path).resolve().stem)
+    return True
 
 
-@job
-def marker_on_pdf(input_path, output_dir):
-    # This is where we run the Document Understanding model.
-    # It should take as input the PDF generated by `jpgs_2_pdf` and output each page's contents inside the output_dir
-    return None
+# -------------------------------
+# 3. Flow definition
+# -------------------------------
+jpgs = jp2s_to_jpgs(barcode_dir)
+pdf = jpgs_to_pdf(jpgs.output, barcode_dir)
+marker_pdf = marker_on_pdf(pdf.output)
 
+flow = Flow([jpgs, pdf, marker_pdf])
 
-jpgs = jp2s_to_jpgs(input_dir)
-jpgs_output = jpgs.output  # This is the directory where all JPEG files are stored.
+# -------------------------------
+# 4. FireWorks launcher location
+# -------------------------------
+os.chdir(launcher_root)  # <<-- keep launcher_* dirs in ~/fw_launchers
 
-pdf_output_path = "./"
-pdf = jpgs_2_pdf(jpgs_output, pdf_output_path)
-pdf_output = pdf.output  # This is the path to the file where the PDF is stored.
+# Configure the workflow to not restart
+wf = flow_to_workflow(flow)
+wf.metadata = {"_prevent_auto_restart": True}
 
-marker = marker_on_pdf(pdf_output, Path(output_dir))
-
-
-flow = Flow(
-    [
-        jpgs,
-    ]
-)
-
-
-responses = run_locally(flow)
+# Or set longer timeouts
+for fw in wf.fws:
+    fw.spec.update(
+        {
+            "_timeout": 3600,  # 1 hour timeout
+            "_prevent_auto_restart": True,
+        }
+    )
+lpad = LaunchPad.auto_load()
+lpad.reset("", require_password=False)
+lpad.add_wf(wf)
+rapidfire(lpad)
