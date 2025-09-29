@@ -190,3 +190,16 @@ cython_debug/
 *.out
 *.err
 *.log
+
+# Ignore YAML Configs
+*.yaml
+*.yml
+
+# Ignore intermediate launcher dirs
+*launcher*
+
+# Ignore harper files
+*.txt
+
+# Ignore FW.json
+FW.json
