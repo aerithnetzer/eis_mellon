@@ -808,6 +808,19 @@ wheels = [
 ]
 
 [[package]]
+name = "digitask"
+version = "0.0.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "fireworks" },
+    { name = "woolworm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/21/52/7bb463cdef42df2ddfd6b5951de08474f31778043fc6091d411d465359d3/digitask-0.0.3.tar.gz", hash = "sha256:0b7861ebadd4278cb57ff7ce500eae13ee25822e84594e2c5afd46a3db6f6474", size = 2096, upload-time = "2025-09-30T01:19:18.23Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/aa/0f/a5124bdb499ff211a8e7469d574e0dbe4baa15044c3ea14fb2752ddb01fe/digitask-0.0.3-py3-none-any.whl", hash = "sha256:c38a7ae140bc0c8d94fc850b1071a46698367b28d512de9069d924ab00e5e46c", size = 2458, upload-time = "2025-09-30T01:19:16.902Z" },
+]
+
+[[package]]
 name = "dill"
 version = "0.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1014,6 +1027,7 @@ source = { editable = "." }
 dependencies = [
     { name = "accelerate" },
     { name = "boto3" },
+    { name = "digitask" },
     { name = "docling" },
     { name = "img2pdf" },
     { name = "ipykernel" },
@@ -1044,6 +1058,7 @@ dependencies = [
 requires-dist = [
     { name = "accelerate", specifier = ">=1.10.1" },
     { name = "boto3", specifier = ">=1.40.35" },
+    { name = "digitask", specifier = ">=0.0.3" },
     { name = "docling", specifier = ">=2.54.0" },
     { name = "img2pdf", specifier = ">=0.6.1" },
     { name = "ipykernel", specifier = ">=6.30.1" },

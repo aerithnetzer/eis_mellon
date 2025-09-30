@@ -1,9 +1,10 @@
-from fireworks import Firework, FWorker, LaunchPad
-from fireworks.core.rocket_launcher import launch_rocket, rapidfire
-from tasks import ImageTask, ImageToPDFTask
-from fireworks.fw_config import USER_PACKAGES
 import os
 from pathlib import Path
+
+from fireworks import Firework, FWorker, LaunchPad
+from fireworks.core.rocket_launcher import rapidfire
+from fireworks.queue import queue_adapter
+from digitask import ImageTask, ImageToPDFTask
 
 if __name__ == "__main__":
     launchpad = LaunchPad(
@@ -13,7 +14,7 @@ if __name__ == "__main__":
     )
     launchpad.reset("")
     raw_dir = Path("./data/raw")
-
+    q = queue_adapter.QScriptTemplate()
     for dir in raw_dir.iterdir():
         if dir.is_dir():  # only process directories
             firework = Firework(

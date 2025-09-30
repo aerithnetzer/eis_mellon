@@ -37,6 +37,7 @@ dependencies = [
   "tqdm",
   "typer",
   "woolworm>=0.0.8",
+  "digitask>=0.0.3",
 ]
 requires-python = "~=3.12.0"
 
