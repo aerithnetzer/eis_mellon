@@ -1,28 +1,38 @@
 import os
 from pathlib import Path
-
-from fireworks import Firework, FWorker, LaunchPad
-from fireworks.core.rocket_launcher import rapidfire
-from fireworks.queue import queue_adapter
-from digitask import ImageTask, ImageToPDFTask
+from fireworks import Firework, LaunchPad
+from tasks import ImageTask, ImageToPDFTask
+import certifi
 
 if __name__ == "__main__":
     launchpad = LaunchPad(
-        host=os.getenv("MONGODB_OCR_DEVELOPMENT_CONN_STRING"),
+        host="ocr-development.poelxty.mongodb.net",
+        port=27017,
+        uri_mode=False,
         name="fireworks",
-        uri_mode=True,
+        mongoclient_kwargs={
+            "tls": False,
+            "tlsCAFile": certifi.where(),  # or "/gpfs/projects/p32234/projects/aerith/mongodb-ca.pem"
+            # Optional extras:
+            # "tlsCertificateKeyFile": "/path/to/client.pem",
+            # "tlsCertificateKeyFilePassword": "your_passphrase",
+            # "authMechanism": "SCRAM-SHA-256"
+        },
     )
-    launchpad.reset("")
+
+    launchpad.reset("", require_password=False)
     raw_dir = Path("./data/raw")
-    q = queue_adapter.QScriptTemplate()
+
+    # Just add workflows to the database
     for dir in raw_dir.iterdir():
-        if dir.is_dir():  # only process directories
+        if dir.is_dir():
             firework = Firework(
                 [ImageTask(), ImageToPDFTask()],
-                spec={"barcode_dir": str(dir.resolve())},  # full absolute path
+                spec={"barcode_dir": str(dir.resolve())},
                 name="OCR Pipeline",
             )
-
-            # Store workflow and launch it locally
             launchpad.add_wf(firework)
-    rapidfire(launchpad, FWorker())
+            print(f"Added workflow for {dir.name}")
+
+    print("\nWorkflows added. Now submit them with:")
+    print("fab -H your_netid@quest.northwestern.edu qlaunch")

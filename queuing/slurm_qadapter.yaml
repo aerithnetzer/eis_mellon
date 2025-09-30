@@ -1,0 +1,16 @@
+_fw_name: CommonAdapter
+_fw_q_type: SLURM
+rocket_launch: rlaunch singleshot
+nodes: 1
+ntasks_per_node: 1
+walltime: '24:00:00'
+queue: normal
+account: p32234
+job_name: atomate2_job
+pre_rocket: |
+  module purge
+  module load python/3.12.0
+  source .venv/bin/activate
+  export MONGODB_OCR_DEVELOPMENT_CONN_STRING="mongodb+srv://username:password@ac-i7nqpdp.poelxty.mongodb.net/fireworks?retryWrites=true&w=majority"
+post_rocket: null
+logdir: logs/

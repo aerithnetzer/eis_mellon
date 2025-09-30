@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH --account=$${ACCOUNT} ## Required: your allocation/account name, i.e. eXXXX, pXXXX or bXXXX
+#SBATCH --partition=$${PARTITION} ## Required: (buyin, short, normal, long, gengpu, genhimem, etc)
+#SBATCH --time=$${WALLTIME} ## Required: How long will the job need to run (remember different partitions have restrictions on this parameter)
+#SBATCH --nodes=$${nodes} ## how many computers/nodes do you need (no default)
+#SBATCH --ntasks-per-node=$${ntasks_per_node} ## how many cpus or processors do you need on per computer/node (default value 1)
+#SBATCH --mem=$${memory} ## how much RAM do you need per computer/node (this affects your FairShare score so be careful to not ask for more than you need))
+#SBATCH --job-name=$${job_name}
+
+$${pre_rocket}
+cd $${launch_dir}
+$${rocket_launch}
+$${post_rocket}
